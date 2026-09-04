@@ -359,6 +359,38 @@ describe('helpers.js', () => {
 	});
 });
 
+describe('OSCInstance', () => {
+	it('creates a sending-only client during init so saved UDP connections survive restart', async () => {
+		const setupOSC = sinon.stub();
+		let OSCInstance;
+		proxyquire('./osc.js', {
+			'@companion-module/base': {
+				InstanceBase: class {},
+				Regex: {},
+				runEntrypoint: (instanceClass) => {
+					OSCInstance = instanceClass;
+				},
+			},
+			'./helpers.js': {
+				isValidIPAddress: () => true,
+				setupOSC,
+			},
+		});
+
+		const instance = new OSCInstance();
+		instance.updateActions = sinon.stub();
+		instance.updateFeedbacks = sinon.stub();
+		instance.updateVariables = sinon.stub();
+		instance.updateStatus = sinon.stub();
+		instance.log = sinon.stub();
+
+		await instance.init({ host: '192.168.1.20', targetPort: 53010, protocol: 'udp', listen: false });
+
+		expect(setupOSC.calledOnceWith(instance)).to.equal(true);
+		expect(instance.updateStatus.calledWith('ok')).to.equal(true);
+	});
+});
+
 describe('osc-feedback.js', () => {
 	describe('onDataHandler()', () => {
 		it('handles OSC bundle packets including int/float/string/blob/midi/bool', async () => {

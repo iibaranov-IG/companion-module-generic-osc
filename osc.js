@@ -53,8 +53,13 @@ class OSCInstance extends InstanceBase {
 					this.setupListeners();
 				}
 			}
-		} else {
+		} else if (validate && this.targetHost && this.config.targetPort) {
+			// Sending-only UDP/TCP connections create their socket lazily when an
+			// action is invoked, but the client itself must exist after restart.
+			setupOSC(this);
 			this.updateStatus('ok');
+		} else {
+			this.updateStatus('bad_config');
 		}
 
 		this.updateActions(); // export actions
